@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Transações</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 430px;
+            width: 100%;
+            min-height: 932px;
+            background: #1a1a1a;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .filters {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-button {
+            background: #2a2a2a;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+
+        .filter-button:hover {
+            background: #333;
+        }
+
+        .filter-button.active {
+            background: #7c3aed;
+        }
+
+        .transactions-list {
+            padding: 0 20px;
+        }
+
+        .date-group {
+            margin-bottom: 25px;
+        }
+
+        .date-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .transaction-item {
+            background: #2a2a2a;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            transition: background 0.3s, transform 0.3s, opacity 0.3s;
+        }
+
+        .transaction-item:hover {
+            background: #333;
+        }
+
+        .transaction-item.removing {
+            opacity: 0;
+            transform: translateX(-100%);
+        }
+
+        .transaction-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .transaction-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: #1a1a1a;
+        }
+
+        .transaction-details h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .transaction-details p {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .transaction-amount {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .amount {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .amount.income {
+            color: #22c55e;
+        }
+
+        .amount.expense {
+            color: #ef4444;
+        }
+
+        .menu-dots {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.3s;
+            font-size: 20px;
+        }
+
+        .menu-dots:hover {
+            background: #444;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .context-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 430px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .context-menu.active {
+            transform: translateY(0);
+        }
+
+        .context-menu-item {
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background 0.3s;
+            font-size: 16px;
+        }
+
+        .context-menu-item:hover {
+            background: #333;
+        }
+
+        .context-menu-item.delete {
+            color: #ef4444;
+        }
+
+        .context-menu-item.cancel {
+            color: #888;
+            margin-top: 10px;
+            border-top: 1px solid #333;
+            padding-top: 18px;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+            transition: transform 0.3s;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2a2a2a;
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #333;
+            max-width: 430px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 8px 15px;
+            transition: color 0.3s;
+        }
+
+        .nav-item.active {
+            color: #a855f7;
+        }
+
+        .nav-item:hover {
+            color: #a855f7;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1a1a1a;
+            z-index: 1001;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            max-width: 430px;
+            margin: 0 auto;
+        }
+
+        .modal.active {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: #a855f7;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .modal-content {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            background: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border: none;
+            border-radius: 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .filter-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 5px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 100;
+        }
+
+        .filter-dropdown.active {
+            display: block;
+        }
+
+        .filter-option {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .filter-option:hover {
+            background: #333;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2a2a2a;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+            z-index: 1002;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button">‹</button>
+            <h1>Transações</h1>
+        </div>
+
+        <div class="filters">
+            <button class="filter-button" id="monthFilter">
+                <span id="monthText">Novembro</span> ▼
+            </button>
+            <button class="filter-button" id="categoryFilter">
+                <span id="categoryText">Todas</span> ▼
+            </button>
+        </div>
+
+        <div class="transactions-list" id="transactionsList">
+            <div class="date-group">
+                <div class="date-label">Hoje - 02 Nov</div>
+                
+                <div class="transaction-item" data-id="1">
+                    <div class="transaction-info">
+                        <div class="transaction-icon">📚</div>
+                        <div class="transaction-details">
+                            <h3>Educação</h3>
+                            <p>Despesas • 14:30</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount expense">- R$ 45,00</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                </div>
+
+                <div class="transaction-item" data-id="2">
+                    <div class="transaction-info">
+                        <div class="transaction-icon">💰</div>
+                        <div class="transaction-details">
+                            <h3>Salário</h3>
+                            <p>Receitas • 09:00</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount income">+ R$ 3.284,00</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="date-group">
+                <div class="date-label">Ontem - 01</div>
+                
+                <div class="transaction-item" data-id="3">
+                    <div class="transaction-info">
+                        <div class="transaction-icon">🛒</div>
+                        <div class="transaction-details">
+                            <h3>Mercado</h3>
+                            <p>Alimentação • 18:45</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount expense">- R$ 127,00</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                </div>
+
+                <div class="transaction-item" data-id="4">
+                    <div class="transaction-info">
+                        <div class="transaction-icon">☕</div>
+                        <div class="transaction-details">
+                            <h3>Cafeteria</h3>
+                            <p>Alimentação • 15:20</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount expense">- R$ 18,50</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="date-group">
+                <div class="date-label">30 Out</div>
+                
+                <div class="transaction-item" data-id="5">
+                    <div class="transaction-info">
+                        <div class="transaction-icon">💼</div>
+                        <div class="transaction-details">
+                            <h3>Freelance</h3>
+                            <p>Receitas • 20:15</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount income">+ R$ 500,00</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fab" id="addTransactionFab">+</div>
+
+        <div class="navbar">
+            <div class="nav-item">
+                <div class="nav-icon">🏠</div>
+                <span>Principal</span>
+            </div>
+            <div class="nav-item active">
+                <div class="nav-icon">📊</div>
+                <span>Transações</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">📈</div>
+                <span>Relatórios</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">⋯</div>
+                <span>Mais</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="editTransaction">
+            ✏️ Editar transação
+        </div>
+        <div class="context-menu-item delete" id="deleteTransaction">
+            🗑️ Excluir transação
+        </div>
+        <div class="context-menu-item cancel" id="cancelMenu">
+            Cancelar
+        </div>
+    </div>
+
+    <div class="modal" id="transactionModal">
+        <div class="modal-header">
+            <h2 id="modalTitle">Nova Transação</h2>
+            <button class="close-button" id="closeModal">Fechar</button>
+        </div>
+        <div class="modal-content">
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="transactionTitle" placeholder="Ex: Almoço" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" step="0.01" id="transactionValue" placeholder="0,00" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="transactionType" required>
+                        <option value="income">Receita</option>
+                        <option value="expense">Despesa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <input type="text" id="transactionCategory" placeholder="Ex: Alimentação" required>
+                </div>
+                <div class="form-group">
+                    <label>Ícone</label>
+                    <select id="transactionIcon" required>
+                        <option value="📚">📚 Educação</option>
+                        <option value="💰">💰 Salário</option>
+                        <option value="🛒">🛒 Mercado</option>
+                        <option value="☕">☕ Cafeteria</option>
+                        <option value="💼">💼 Freelance</option>
+                        <option value="🏠">🏠 Casa</option>
+                        <option value="🚗">🚗 Transporte</option>
+                        <option value="🎮">🎮 Lazer</option>
+                        <option value="💊">💊 Saúde</option>
+                        <option value="👕">👕 Roupas</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-button">Salvar Transação</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentTransaction = null;
+        let transactionIdCounter = 6;
+
+        const menuDots = document.querySelectorAll('.menu-dots');
+        const contextMenu = document.getElementById('contextMenu');
+        const overlay = document.getElementById('overlay');
+        const cancelMenu = document.getElementById('cancelMenu');
+        const toast = document.getElementById('toast');
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        menuDots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const transactionItem = dot.closest('.transaction-item');
+                currentTransaction = transactionItem.dataset.id;
+                
+                contextMenu.classList.add('active');
+                overlay.classList.add('active');
+            });
+        });
+
+        function closeContextMenu() {
+            contextMenu.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        cancelMenu.addEventListener('click', closeContextMenu);
+        overlay.addEventListener('click', () => {
+            closeContextMenu();
+            transactionModal.classList.remove('active');
+        });
+
+        const editTransaction = document.getElementById('editTransaction');
+        const transactionModal = document.getElementById('transactionModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+
+        editTransaction.addEventListener('click', () => {
+            closeContextMenu();
+            
+            const transaction = document.querySelector(`[data-id="${currentTransaction}"]`);
+            const title = transaction.querySelector('.transaction-details h3').textContent;
+            const amountText = transaction.querySelector('.amount').textContent.replace(/[^0-9,]/g, '');
+            const value = amountText.replace(',', '.');
+            const type = transaction.querySelector('.amount').classList.contains('income') ? 'income' : 'expense';
+            const category = transaction.querySelector('.transaction-details p').textContent.split(' • ')[0];
+            const icon = transaction.querySelector('.transaction-icon').textContent;
+            
+            document.getElementById('transactionTitle').value = title;
+            document.getElementById('transactionValue').value = value;
+            document.getElementById('transactionType').value = type;
+            document.getElementById('transactionCategory').value = category;
+            document.getElementById('transactionIcon').value = icon;
+            
+            modalTitle.textContent = 'Editar Transação';
+            transactionModal.classList.add('active');
+        });
+
+        const deleteTransaction = document.getElementById('deleteTransaction');
+
+        deleteTransaction.addEventListener('click', () => {
+            if (confirm('Deseja realmente excluir esta transação?')) {
+                const transaction = document.querySelector(`[data-id="${currentTransaction}"]`);
+                transaction.classList.add('removing');
+                
+                setTimeout(() => {
+                    transaction.remove();
+                    showToast('✓ Transação excluída');
+                }, 300);
+            }
+            closeContextMenu();
+        });
+
+        const addTransactionFab = document.getElementById('addTransactionFab');
+        
+        addTransactionFab.addEventListener('click', () => {
+            document.getElementById('transactionForm').reset();
+            modalTitle.textContent = 'Nova Transação';
+            transactionModal.classList.add('active');
+            currentTransaction = null;
+        });
+
+        closeModal.addEventListener('click', () => {
+            transactionModal.classList.remove('active');
+        });
+
+        const transactionForm = document.getElementById('transactionForm');
+        const transactionsList = document.getElementById('transactionsList');
+
+        transactionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('transactionTitle').value;
+            const value = parseFloat(document.getElementById('transactionValue').value);
+            const type = document.getElementById('transactionType').value;
+            const category = document.getElementById('transactionCategory').value;
+            const icon = document.getElementById('transactionIcon').value;
+            
+            if (currentTransaction) {
+                const transaction = document.querySelector(`[data-id="${currentTransaction}"]`);
+                transaction.querySelector('.transaction-details h3').textContent = title;
+                transaction.querySelector('.transaction-icon').textContent = icon;
+                transaction.querySelector('.transaction-details p').textContent = `${category} • ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+                
+                const amountElement = transaction.querySelector('.amount');
+                amountElement.textContent = `${type === 'income' ? '+' : '-'} R$ ${value.toFixed(2).replace('.', ',')}`;
+                amountElement.className = `amount ${type}`;
+                
+                showToast('✓ Transação atualizada');
+            } else {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                
+                const newTransaction = document.createElement('div');
+                newTransaction.className = 'transaction-item';
+                newTransaction.dataset.id = transactionIdCounter++;
+                newTransaction.innerHTML = `
+                    <div class="transaction-info">
+                        <div class="transaction-icon">${icon}</div>
+                        <div class="transaction-details">
+                            <h3>${title}</h3>
+                            <p>${category} • ${timeStr}</p>
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <span class="amount ${type}">${type === 'income' ? '+' : '-'} R$ ${value.toFixed(2).replace('.', ',')}</span>
+                        <div class="menu-dots">⋮</div>
+                    </div>
+                `;
+                
+                const firstGroup = transactionsList.querySelector('.date-group');
+                firstGroup.appendChild(newTransaction);
+                
+                const newDot = newTransaction.querySelector('.menu-dots');
+                newDot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    currentTransaction = newTransaction.dataset.id;
+                    contextMenu.classList.add('active');
+                    overlay.classList.add('active');
+                });
+                
+                showToast('✓ Transação adicionada');
+            }
+            
+            transactionModal.classList.remove('active');
+        });
+
+        const monthFilter = document.getElementById('monthFilter');
+        const categoryFilter = document.getElementById('categoryFilter');
+
+        monthFilter.addEventListener('click', () => {
+            showToast('Filtro de mês em desenvolvimento');
+        });
+
+        categoryFilter.addEventListener('click', () => {
+            showToast('Filtro de categoria em desenvolvimento');
+        });
+
+        const backButton = document.querySelector('.back-button');
+        backButton.addEventListener('click', () => {
+            window.history.back();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Validar Código</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #111;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 380px;
+        height: 100vh;
+        background: linear-gradient(180deg, #4B007D, #0F0F0F);
+        padding: 30px 25px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        font-size: 22px;
+        margin-bottom: 15px;
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    p {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+
+    /* ---- CÓDIGOS ---- */
+    .code-container {
+        display: flex;
+        justify-content: space-between;
+        margin: 15px 0 20px;
+    }
+
+    .code-container input {
+        width: 52px;
+        height: 52px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        outline: none;
+        color: white;
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .code-container input:focus {
+        background: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 0 5px #d93bff;
+    }
+
+    .resend {
+        font-size: 13px;
+        color: #d93bff;
+        margin-bottom: 25px;
+        cursor: pointer;
+    }
+
+    .resend:hover {
+        text-decoration: underline;
+    }
+
+    button {
+        background: #d93bff;
+        border: none;
+        width: 100%;
+        padding: 14px;
+        border-radius: 25px;
+        color: white;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #b82fe0;
+    }
+
+    .success-message {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #90ff90;
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Acabamos de enviar um código no seu e-mail</h2>
+
+    <p>Digite abaixo o código de verificação de 5 dígitos enviado para seu e-mail.</p>
+
+    <div class="code-container">
+        <input maxlength="1" type="text">
+        <input maxlength="1" type="text">
+        <input maxlength="1" type="text">
+        <input maxlength="1" type="text">
+        <input maxlength="1" type="text">
+    </div>
+
+    <div class="resend">Reenviar código</div>
+
+    <button onclick="validar()">Validar código</button>
+
+    <p id="feedback" class="success-message"></p>
+</div>
+
+<script>
+    // Campos dos dígitos
+    const inputs = document.querySelectorAll(".code-container input");
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("input", () => {
+            if (input.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace" && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+
+    // Validação
+    function validar() {
+        const feedback = document.getElementById("feedback");
+        let codigo = "";
+
+        inputs.forEach(i => codigo += i.value);
+
+        if (codigo.length !== 5) {
+            feedback.style.display = "block";
+            feedback.style.color = "#ff8080";
+            feedback.innerText = "Digite todos os 5 dígitos.";
+            return;
+        }
+
+        feedback.style.display = "block";
+        feedback.style.color = "#90ff90";
+        feedback.innerText = "Código validado com sucesso!";
+    }
+</script>
+
+</body>
+</html>

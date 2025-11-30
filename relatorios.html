@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Relatórios — Donut Reduzido</title>
+<style>
+  :root{
+    --bg:#1E1E1E;
+    --card:#2C2C2C;
+    --primary:#C04BFF;
+    --white:#FFFFFF;
+    --muted:#C8C8C8;
+    --slice1:#D94DFF; /* rosa forte */
+    --slice2:#FF9D42; /* laranja */
+    --slice3:#F0E05A; /* amarelo */
+    --slice4:#F279C7; /* rosa claro */
+    --radius:220px; /* base donut container (CSS/SVG scaled) */
+    --phone-w:380px;
+    font-family: Inter, Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--white);-webkit-font-smoothing:antialiased}
+  .phone{
+    width:var(--phone-w);
+    max-width:94vw;
+    margin:18px auto;
+    padding:16px;
+    border-radius:18px;
+    background:var(--bg);
+    position:relative;
+  }
+
+  /* Header */
+  header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .icon-btn{width:40px;height:40px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:var(--white);cursor:pointer}
+  .title{flex:1;text-align:center;font-weight:700;font-size:18px;color:var(--white)}
+
+  /* Top tabs (3 buttons) */
+  .top-tabs{display:flex;gap:8px;background:transparent;margin-bottom:12px}
+  .top-tab{flex:1;padding:8px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .top-tab.active{background:#4A4A4A;color:var(--white)}
+
+  /* Pills */
+  .pills{display:flex;gap:10px;margin-bottom:12px}
+  .pill{flex:1;padding:10px;border-radius:999px;background:var(--card);color:rgba(255,255,255,0.9);font-weight:700;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+  .pill.active{background:var(--primary);color:var(--white);box-shadow:0 10px 26px rgba(192,75,255,0.12)}
+
+  /* Month selector */
+  .month{display:flex;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .month button{background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer}
+
+  /* Card */
+  .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+  /* Donut area (reduced ~60%) */
+  .donut-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;position:relative}
+  .donut{
+    width:var(--radius);
+    height:var(--radius);
+    display:flex;align-items:center;justify-content:center;position:relative;border-radius:50%;
+  }
+  /* SVG will be rotated to start at top; use viewBox 0..200 */
+  .donut svg{width:100%;height:100%;display:block;transform:rotate(-90deg);border-radius:50%}
+  /* inner hole exactly centered using translate(-50%,-50%) */
+  .donut-center{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+  .donut-center .small{font-size:13px;color:var(--muted);font-weight:700}
+  .donut-center .big{font-size:18px;color:var(--white);font-weight:900;margin-top:6px}
+
+  /* Legend (list of categories) */
+  .legend{margin-top:12px;display:flex;flex-direction:column;gap:12px;padding-bottom:60px}
+  .legend-item{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .legend-left{display:flex;align-items:center;gap:12px}
+  .swatch{width:44px;height:44px;border-radius:10px;flex:0 0 44px}
+  .meta{display:flex;flex-direction:column}
+  .meta .name{font-weight:800}
+  .meta .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .meta-right{display:flex;flex-direction:column;align-items:flex-end}
+  .meta-right .value{font-weight:800}
+  .meta-right .pct{font-size:13px;color:var(--muted);margin-top:4px}
+
+  /* FAB and bottom nav */
+  .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;width:64px;height:64px;border-radius:50%;background:linear-gradient(180deg,var(--primary),#9a30e6);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:32px;box-shadow:0 18px 40px rgba(192,75,255,0.18);border:6px solid rgba(0,0,0,0.12);cursor:pointer;z-index:40}
+  .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:calc(var(--phone-w) - 32px);max-width:94vw;background:var(--card);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid rgba(255,255,255,0.03)}
+  .nav-item{display:flex;flex-direction:column;align-items:center;color:var(--muted);font-size:12px;gap:6px;flex:1;cursor:pointer}
+  .nav-item.active{color:var(--primary)}
+
+  /* Small responsive adjustments */
+  @media (max-width:360px){
+    :root{--radius:180px}
+    .donut-center{width:96px;height:96px}
+    .swatch{width:40px;height:40px}
+    .phone{padding:12px}
+  }
+</style>
+</head>
+<body>
+  <div class="phone" role="application" aria-label="Relatórios">
+    <header>
+      <button id="back" class="icon-btn" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <div class="title">Relatórios</div>
+
+      <div style="display:flex;gap:8px">
+        <button id="filter" class="icon-btn" aria-label="Filtro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button id="menu" class="icon-btn" aria-label="Menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="4" height="4" rx="1" fill="currentColor"/><rect x="10" y="3" width="4" height="4" rx="1" fill="currentColor"/><rect x="17" y="3" width="4" height="4" rx="1" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="top-tabs" role="tablist" aria-label="Tipo de relatório">
+      <div class="top-tab active" data-tab="donut">📊</div>
+      <div class="top-tab" data-tab="bars">📈</div>
+      <div class="top-tab" data-tab="lines">🔗</div>
+    </div>
+
+    <div class="pills" role="toolbar" aria-label="Sub-relatórios">
+      <div id="byCat" class="pill active">Despesas por categoria</div>
+      <div id="byAcc" class="pill">Despesas por conta</div>
+    </div>
+
+    <div class="card">
+      <div class="month">
+        <button id="prev">&lt;</button>
+        <div id="monthLabel">Novembro</div>
+        <button id="next">&gt;</button>
+      </div>
+
+      <div class="donut-wrap" aria-label="Gráfico donut">
+        <div class="donut" id="donut">
+          <!-- SVG donut (slices only, no inner labels) -->
+          <svg id="svg" viewBox="0 0 200 200" aria-hidden="true"></svg>
+
+          <!-- Center EXACTLY centered -->
+          <div class="donut-center" role="presentation" aria-hidden="false">
+            <div class="small">Total</div>
+            <div id="centerValue" class="big">R$ 3.284,00</div>
+          </div>
+        </div>
+
+        <div class="legend" id="legend" aria-label="Lista de categorias">
+          <!-- JS will inject legend items (education + casa first) -->
+        </div>
+      </div>
+    </div>
+
+    <!-- FAB -->
+    <div id="fab" class="fab" role="button" aria-label="Adicionar">+</div>
+
+    <!-- Bottom nav -->
+    <div class="bottom" role="navigation" aria-label="Barra inferior">
+      <div id="navHome" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7v8a1 1 0 01-1 1h-4v-6H8v6H4a1 1 0 01-1-1v-8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div>Principal</div></div>
+      <div id="navTx" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div>Transações</div></div>
+      <div style="width:64px"></div>
+      <div id="navReports" class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v7H3zM3 14h18v7H3z" fill="currentColor"/></svg><div>Relatórios</div></div>
+      <div id="navMore" class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M8 12h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div>Mais</div></div>
+    </div>
+  </div>
+
+<script>
+/* Minimal JS: build donut slices (SVG), legend, interactions.
+   Legend items show Educação and Casa first with exact percent text requested.
+*/
+
+const DATA = [
+  { id:'edu', name:'Educação', value:650, color:getComputedStyle(document.documentElement).getPropertyValue('--slice1') || '#D94DFF', pctText:'21,67%' },
+  { id:'casa', name:'Casa', value:276, color:getComputedStyle(document.documentElement).getPropertyValue('--slice4') || '#F279C7', pctText:'9,27%' },
+  { id:'alim', name:'Alimentação', value:220, color:getComputedStyle(document.documentElement).getPropertyValue('--slice3') || '#F0E05A' , pctText:''},
+  { id:'outros', name:'Outros', value:290, color:getComputedStyle(document.documentElement).getPropertyValue('--slice2') || '#FF9D42' , pctText:''}
+];
+
+const svg = document.getElementById('svg');
+const legend = document.getElementById('legend');
+const centerValue = document.getElementById('centerValue');
+const monthLabel = document.getElementById('monthLabel');
+let monthIndex = 10; // Novembro
+
+function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}); }
+
+/* draw donut as SVG slices; we keep reduced size and central hole */
+function drawDonut(){
+  const total = DATA.reduce((s,d)=>s+d.value,0);
+  svg.innerHTML = '';
+  const cx = 100, cy = 100, R = 80, innerR = 46; // thickness ~34
+  let start = 0;
+  for(let i=0;i<DATA.length;i++){
+    const d = DATA[i];
+    const angle = d.value / total * 360;
+    const end = start + angle;
+
+    // create path for donut slice (outer arc + inner arc)
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const startOuter = polar(cx,cy,R,start);
+    const endOuter = polar(cx,cy,R,end);
+    const startInner = polar(cx,cy,innerR,start);
+    const endInner = polar(cx,cy,innerR,end);
+    const large = angle > 180 ? 1 : 0;
+
+    const dAttr = [
+      `M ${startOuter.x} ${startOuter.y}`,
+      `A ${R} ${R} 0 ${large} 1 ${endOuter.x} ${endOuter.y}`,
+      `L ${endInner.x} ${endInner.y}`,
+      `A ${innerR} ${innerR} 0 ${large} 0 ${startInner.x} ${startInner.y}`,
+      'Z'
+    ].join(' ');
+    p.setAttribute('d', dAttr);
+    p.setAttribute('fill', d.color);
+    p.setAttribute('data-idx', i);
+    p.style.transition = 'transform .18s ease, opacity .18s ease';
+    svg.appendChild(p);
+
+    start = end;
+  }
+
+  // subtle ring overlay (stroke) to smooth look
+  const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring.setAttribute('cx',cx);
+  ring.setAttribute('cy',cy);
+  ring.setAttribute('r',(R+innerR)/2);
+  ring.setAttribute('fill','none');
+  ring.setAttribute('stroke','rgba(255,255,255,0.02)');
+  ring.setAttribute('stroke-width',R-innerR);
+  ring.setAttribute('pointer-events','none');
+  svg.appendChild(ring);
+
+  // center value fixed per spec
+  centerValue.textContent = 'R$ 3.284,00';
+  buildLegend(total);
+}
+
+/* polar helper: degree measured from top (0 at top), converts to x,y */
+function polar(cx,cy,r,deg){
+  const rad = (deg-90) * Math.PI/180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+/* Build legend — ensure Educação and Casa show requested percent text */
+function buildLegend(total){
+  legend.innerHTML = '';
+  // We will render items in the order of DATA; first two include specific pct text
+  DATA.forEach((d,idx)=>{
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const pct = d.pctText || ((d.value/total*100).toFixed(2).replace('.',',') + '%');
+    item.innerHTML = `
+      <div class="legend-left">
+        <div class="swatch" style="background:${d.color}"></div>
+        <div class="meta">
+          <div class="name">${d.name}</div>
+          <div class="sub">Porcentagem</div>
+        </div>
+      </div>
+      <div class="meta-right">
+        <div class="value">${fmt(d.value)}</div>
+        <div class="pct">${pct}</div>
+      </div>
+    `;
+    // interactions
+    item.addEventListener('click', ()=> alert(`Categoria selecionada: ${d.name} — ${fmt(d.value)}`));
+    item.addEventListener('mouseenter', ()=> highlightSlice(idx));
+    item.addEventListener('mouseleave', ()=> resetSlices());
+    legend.appendChild(item);
+  });
+}
+
+/* highlight slice */
+function highlightSlice(idx){
+  const paths = svg.querySelectorAll('path');
+  paths.forEach((p,i)=>{
+    if(i===idx){ p.style.transform='scale(1.06)'; p.style.opacity='1'; }
+    else{ p.style.transform='scale(1)'; p.style.opacity='0.45'; }
+  });
+  centerValue.textContent = fmt(DATA[idx].value);
+}
+
+/* reset */
+function resetSlices(){
+  const paths = svg.querySelectorAll('path');
+  paths.forEach(p=>{ p.style.transform='scale(1)'; p.style.opacity='1'; });
+  centerValue.textContent = 'R$ 3.284,00';
+}
+
+/* Click on SVG slice -> alert */
+svg.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(t && t.tagName==='path' && t.dataset.idx!==undefined){
+    const idx = Number(t.dataset.idx);
+    const d = DATA[idx];
+    alert(`Categoria selecionada: ${d.name} — ${fmt(d.value)}`);
+  }
+});
+
+/* Month navigation */
+const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+document.getElementById('prev').addEventListener('click', ()=> {
+  monthIndex = (monthIndex + 11) % 12;
+  monthLabel.textContent = months[monthIndex];
+});
+document.getElementById('next').addEventListener('click', ()=> {
+  monthIndex = (monthIndex + 1) % 12;
+  monthLabel.textContent = months[monthIndex];
+});
+
+/* pills toggle */
+document.getElementById('byCat').addEventListener('click', ()=> {
+  document.getElementById('byCat').classList.add('active');
+  document.getElementById('byAcc').classList.remove('active');
+  // keep same DATA for demo; in real app would switch dataset
+});
+document.getElementById('byAcc').addEventListener('click', ()=> {
+  document.getElementById('byAcc').classList.add('active');
+  document.getElementById('byCat').classList.remove('active');
+  alert('Despesas por conta (placeholder)');
+});
+
+/* FAB */
+document.getElementById('fab').addEventListener('click', ()=> alert('Adicionar nova transação'));
+
+/* Init draw */
+drawDonut();
+</script>
+</body>
+</html>

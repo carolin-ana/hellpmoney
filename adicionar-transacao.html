@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adicionar Transação</title>
+  <style>
+    :root{
+      --bg:#1e1e1e;
+      --card:#2f2f2f;
+      --muted:#aaa;
+      --accent:#a020f0;
+      --success:#0aa60a;
+      --danger:#c62828;
+      --surface:#121212;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body {
+      background:var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing:antialiased;
+    }
+    .container{
+      max-width:520px;
+      margin:0 auto;
+      padding:20px;
+    }
+    h2{margin:0 0 12px}
+
+    .type-buttons{
+      display:flex;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .btn-type{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      border-radius:30px;
+      cursor:pointer;
+      border:2px solid transparent;
+      transition:transform .12s ease, box-shadow .12s ease;
+      outline:none;
+    }
+    .btn-type:focus{box-shadow:0 0 0 3px rgba(160,32,240,0.18)}
+    .btn-type:hover{transform:translateY(-2px)}
+    .btn-type.income{background:var(--success)}
+    .btn-type.expense{background:var(--danger)}
+    .btn-type.selected{box-shadow:0 6px 18px rgba(0,0,0,0.6); transform:translateY(-3px);}
+
+    .categories{margin-top:6px}
+    .category-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin-top:10px;
+    }
+    .category{   
+      background:#333;
+      padding:12px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      border:2px solid transparent;
+
+
+    }
+
+    button.category[data-cat] span, button.category#newCat span { 
+        color: rgba(255, 255, 255, 0.6)
+    }
+
+    .category.selected{border-color:var(--accent); box-shadow:0 6px 14px rgba(155, 3, 3, 0.12)}
+
+    label{display:block; margin-top:12px; font-size:20px; color:var(--muted)}
+    input, button, select {
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border: none;
+      font-size:16px;
+      
+    }
+    input{background:var(--card); color:#fff}
+    .row{display:flex; gap:10px}
+    .row > *{flex:1}
+
+    .actions{display:flex; flex-direction: column; align-items: center; gap:10px; margin-top:18px}
+    button.save{background:var(--accent); color:#fff; width: 50%;}
+    button.cancel{background:rgba(116, 12, 12, 0.082); color:var(--danger); border:none; width: 50%; margin-top: 5px;}
+
+    .fab{
+      position:fixed; bottom:64px; left:50%; transform:translateX(-50%);
+      background:var(--accent); width:60px; height:60px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; font-size:36px; cursor:pointer;
+      box-shadow:0 10px 30px rgba(160,32,240,0.18); transition:transform .18s ease;
+    }
+    .fab:active{transform:translateX(-50%) scale(.95)}
+
+    .bottom-nav{position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; background:var(--surface); padding:10px 0}
+
+    .error{color:#ff8a80; font-size:13px; margin-top:6px}
+
+    /* Responsive */
+    @media (max-width:420px){
+      .category-grid{grid-template-columns:repeat(2,1fr)}
+      .container{padding:14px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Adicionar transação</h2>
+
+    <form id="txForm" novalidate>
+      <div class="type-buttons" role="tablist" aria-label="Tipo de transação">
+        <button type="button" id="incomeBtn" class="btn-type income" aria-pressed="false"> 
+          <strong>Receita</strong>
+          <span aria-hidden="true">R$ 3.000,00</span>
+        </button>
+        <button type="button" id="expenseBtn" class="btn-type expense" aria-pressed="false"> 
+          <strong>Despesa</strong>
+          <span aria-hidden="true">R$ 1.436,00</span>
+        </button>
+      </div>
+      <div id="typeError" class="error" role="alert" aria-live="polite" hidden></div>
+
+      <h3 style="margin:12px 0 6px">Categorias</h3>
+      <div class="categories">
+        <div class="category-grid" role="list">
+          <button type="button" class="category" data-cat="Casa">🏠 <span>Casa</span></button>
+          <button type="button" class="category" data-cat="Educação">📘 <span>Educação</span></button>
+          <button type="button" class="category" data-cat="Alimentação">🍽️ <span>Alimentação</span></button>
+          <button type="button" class="category" id="newCat">➕ <span>Nova categoria</span></button>
+        </div>
+      </div>
+      <div id="catError" class="error" role="alert" aria-live="polite" hidden></div>
+
+      <label for="valor">Valor</label>
+      <input id="valor" name="valor" inputmode="numeric" placeholder="R$ 0,00" aria-describedby="valorHelp" />
+      <div id="valorHelp" class="error" role="alert" aria-live="polite" hidden></div>
+
+      <label for="data">Data</label>
+      <input type="date" id="data" name="data" />
+      <div id="dataHelp" class="error" role="alert" aria-live="polite" hidden></div>
+
+      <label for="desc">Descrição (opcional)</label>
+      <input type="text" id="desc" name="desc" placeholder="Descrição (Opcional)" />
+
+      <div class="actions">
+        <button type="submit" class="save">Salvar</button>
+        <button type="button" class="cancel" id="cancelBtn">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="fab" id="fab" aria-hidden="true">+</div>
+
+  <div class="bottom-nav" role="navigation" aria-label="Navegação principal">
+    <div>🏠</div>
+    <div>📄</div>
+    <div>📊</div>
+    <div>⋯</div>
+  </div>
+
+  <script>
+    // State
+    const state = { type: null, category: null };
+
+    // Elements
+    const incomeBtn = document.getElementById('incomeBtn');
+    const expenseBtn = document.getElementById('expenseBtn');
+    const typeError = document.getElementById('typeError');
+    const catError = document.getElementById('catError');
+    const valorInput = document.getElementById('valor');
+    const dataInput = document.getElementById('data');
+    const valorHelp = document.getElementById('valorHelp');
+    const dataHelp = document.getElementById('dataHelp');
+    const categories = document.querySelectorAll('.category');
+    const newCatBtn = document.getElementById('newCat');
+    const form = document.getElementById('txForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    // Helpers
+    function setType(type){
+      state.type = type;
+      incomeBtn.classList.toggle('selected', type === 'income');
+      expenseBtn.classList.toggle('selected', type === 'expense');
+      incomeBtn.setAttribute('aria-pressed', type === 'income');
+      expenseBtn.setAttribute('aria-pressed', type === 'expense');
+      typeError.hidden = true;
+    }
+
+    incomeBtn.addEventListener('click', ()=> setType('income'));
+    expenseBtn.addEventListener('click', ()=> setType('expense'));
+
+    categories.forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        const cat = btn.dataset.cat || 'Nova categoria';
+        // Toggle selection
+        categories.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.category = btn.dataset.cat || null;
+        catError.hidden = true;
+        if (btn.id === 'newCat'){
+          const name = prompt('Nome da nova categoria:');
+          if (name){
+            btn.dataset.cat = name;
+            btn.querySelector('span').textContent = name;
+            state.category = name;
+          }
+        }
+      });
+    });
+
+    cancelBtn.addEventListener('click', ()=>{
+      form.reset();
+      state.type = null; state.category = null;
+      document.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));
+      typeError.hidden = catError.hidden = valorHelp.hidden = dataHelp.hidden = true;
+    });
+
+    // Currency formatting (simple, keeps caret handling minimal)
+    function formatCurrencyValue(v){
+      const num = parseInt(v.replace(/\D/g,''),10);
+      if (isNaN(num)) return '';
+      return (num/100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    valorInput.addEventListener('input', (e)=>{
+      const clean = e.target.value.replace(/\D/g,'');
+      if (!clean){ e.target.value = ''; return; }
+      e.target.value = formatCurrencyValue(clean);
+      valorHelp.hidden = true;
+    });
+
+    // Form validation
+    function validate(){
+      let ok = true;
+      if (!state.type){ typeError.textContent = 'Por favor selecione o tipo (Receita ou Despesa).'; typeError.hidden = false; ok = false; }
+      if (!state.category){ catError.textContent = 'Por favor selecione uma categoria.'; catError.hidden = false; ok = false; }
+      const raw = (valorInput.value || '').replace(/\D/g,'');
+      if (!raw || parseInt(raw,10) <= 0){ valorHelp.textContent = 'Informe um valor maior que zero.'; valorHelp.hidden = false; ok = false; }
+      if (!dataInput.value){ dataHelp.textContent = 'Informe a data da transação.'; dataHelp.hidden = false; ok = false; }
+      return ok;
+    }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      // Clear previous errors
+      typeError.hidden = catError.hidden = valorHelp.hidden = dataHelp.hidden = true;
+      if (!validate()) return;
+
+      // For this step we only simulate save
+      const tx = {
+        type: state.type,
+        category: state.category,
+        value: (parseInt((valorInput.value||'').replace(/\D/g,''),10)/100),
+        date: dataInput.value,
+        desc: document.getElementById('desc').value
+      };
+      // Visual confirmation
+      alert('Transação salva!\n' + JSON.stringify(tx));
+      form.reset();
+      state.type = null; state.category = null;
+      document.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));
+    });
+
+    // Keyboard accessibility: allow Enter key on category buttons
+    categories.forEach(btn => btn.addEventListener('keydown', (ev)=>{
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); btn.click(); }
+    }));
+
+  </script>
+</body>
+</html>

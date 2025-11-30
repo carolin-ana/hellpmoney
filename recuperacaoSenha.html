@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inserir Nova Senha</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #111;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 380px;
+        height: 100vh;
+        background: linear-gradient(180deg, #4B007D 0%, #0F0F0F 70%);
+        padding: 30px 25px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 35px;
+    }
+
+    .input-field {
+        position: relative;
+        margin-bottom: 18px;
+    }
+
+    .input-field input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        padding: 12px 45px 12px 40px;
+        border-radius: 10px;
+        font-size: 15px;
+        color: #fff;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .icon-left {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        opacity: 0.8;
+    }
+
+    .icon-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        opacity: 0.8;
+        cursor: pointer;
+    }
+
+    .rules {
+        margin-top: -10px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        opacity: 0.8;
+        line-height: 1.4;
+    }
+
+    button {
+        width: 100%;
+        background: #d93bff;
+        padding: 14px;
+        border: none;
+        border-radius: 25px;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: .2s;
+    }
+
+    button:hover {
+        background: #b82fe0;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Insira a nova senha</h2>
+
+    <!-- Senha -->
+    <div class="input-field">
+        <span class="icon-left">🔒</span>
+        <input type="password" id="senha" placeholder="Senha nova">
+        <span class="icon-toggle" onclick="toggleSenha('senha', this)">👁️</span>
+    </div>
+
+    <div class="rules">
+        Sua senha deve conter:<br>
+        • 8 dígitos;<br>
+        • 1 letra maiúscula;
+    </div>
+
+    <!-- Confirmar senha -->
+    <div class="input-field">
+        <span class="icon-left">🔒</span>
+        <input type="password" id="confirmar" placeholder="Confirmar senha">
+        <span class="icon-toggle" onclick="toggleSenha('confirmar', this)">🙈</span>
+    </div>
+
+    <button>Confirmar Senha</button>
+
+</div>
+
+<script>
+    function toggleSenha(id, el) {
+        const input = document.getElementById(id);
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        el.textContent = isPassword ? "🙈" : "👁️";
+    }
+</script>
+
+</body>
+</html>

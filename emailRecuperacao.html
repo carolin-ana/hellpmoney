@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Recuperar Senha</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #111;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 380px;
+        height: 100vh;
+        background: linear-gradient(180deg, #4B007D, #0F0F0F);
+        padding: 30px 25px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        font-size: 22px;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    p {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-bottom: 25px;
+        line-height: 1.4;
+    }
+
+    .input-group {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .input-group input {
+        background: none;
+        border: none;
+        outline: none;
+        color: white;
+        width: 100%;
+        font-size: 15px;
+        margin-left: 10px;
+    }
+
+    .input-group i {
+        font-size: 18px;
+        opacity: 0.8;
+    }
+
+    .info {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-bottom: 25px;
+    }
+
+    button {
+        background: #d93bff;
+        border: none;
+        width: 100%;
+        padding: 14px;
+        border-radius: 25px;
+        color: white;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #b82fe0;
+    }
+
+    .success-message {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #90ff90;
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Recupere sua Senha</h2>
+    <p>Para recuperar sua senha, digite o e-mail usado no Help Money.</p>
+
+    <div class="input-group">
+        <i>📧</i>
+        <input id="email" type="email" placeholder="E-mail" />
+    </div>
+
+    <p class="info">Iremos enviar um código de recuperação de senha</p>
+
+    <button onclick="recuperar()">Recuperar senha</button>
+
+    <p id="feedback" class="success-message"></p>
+</div>
+
+<script>
+    function recuperar() {
+        const email = document.getElementById("email").value;
+        const feedback = document.getElementById("feedback");
+
+        if (!email.trim()) {
+            feedback.style.display = "block";
+            feedback.style.color = "#ff8080";
+            feedback.innerText = "Por favor, digite um e-mail válido.";
+            return;
+        }
+
+        feedback.style.display = "block";
+        feedback.style.color = "#90ff90";
+        feedback.innerText = "Um código de recuperação foi enviado para " + email;
+    }
+</script>
+
+</body>
+</html>

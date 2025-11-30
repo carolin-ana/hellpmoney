@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HellpMoney — Dashboard</title>
+<meta name="color-scheme" content="dark">
+<style>
+  /* ===== Theme & layout (mobile-first, max-width ~420px) ===== */
+  :root{
+    --bg-1:#121212;
+    --bg-2:#1E1E1E;
+    --card:#2B2F3A;
+    --muted:#B0B0B0;
+    --muted-2:#E0E0E0;
+    --accent-purple:#C74DFF;
+    --income-green:#2ED573;
+    --expense-red:#FF6B6B;
+    --shadow: 0 10px 30px rgba(0,0,0,0.6);
+    font-family: Inter, Roboto, "Helvetica Neue", Arial, system-ui, -apple-system;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:var(--muted-2);-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+  .app{max-width:420px;margin:20px auto;padding:16px;box-sizing:border-box;min-height:calc(100vh - 40px);display:flex;flex-direction:column;gap:16px}
+  /* Topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .top-left{display:flex;align-items:center;gap:12px}
+  .avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.04);flex:0 0 40px}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .month-btn{display:inline-flex;align-items:center;gap:8px;background:transparent;border:0;color:var(--muted-2);cursor:pointer;font-weight:600;padding:8px;border-radius:12px}
+  .month-btn:focus{outline:2px solid rgba(199,77,255,0.18)}
+  .chev{width:14px;height:14px;opacity:0.95}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .dot-menu{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.02);display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,0.35);cursor:pointer}
+
+  /* Card balance */
+  .card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.03)}
+  .card .row{display:flex;align-items:center;justify-content:space-between}
+  .title{font-size:13px;color:var(--muted);margin:0}
+  .balance{font-size:34px;font-weight:800;margin-top:6px;color:#FFFFFF;letter-spacing:0.3px;transition:transform .3s}
+  .indicators{display:flex;gap:12px;margin-top:12px}
+  .indicator{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,0.02);cursor:pointer;border:1px solid rgba(0,0,0,0.25)}
+  .ind-icon{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#081014;font-weight:800}
+  .ind-income .ind-icon{background:linear-gradient(180deg,#43e97b,#2fb86a)}
+  .ind-expense .ind-icon{background:linear-gradient(180deg,#ff8a8a,#ff5a5a)}
+  .ind-text .label{font-size:12px;color:var(--muted)}
+  .ind-text .val{font-weight:700;color:#FFF}
+
+  /* Section: donut + legend */
+  .panel{background:var(--card);border-radius:20px;padding:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:var(--shadow)}
+  .panel h4{margin:0 0 10px 0;color:#FFFFFF;font-size:15px}
+  .chart-area{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .donut-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4px}
+  canvas{max-width:160px;width:160px;height:160px;display:block}
+  .legend{width:150px;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+  .legend-item{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .swatch{width:12px;height:12px;border-radius:50%;display:inline-block;flex:0 0 12px}
+  .legend-text{display:flex;flex-direction:column;align-items:flex-end}
+  .legend-text .name{font-weight:700;color:#FFFFFF}
+  .legend-text .val{font-size:13px;color:var(--muted)}
+
+  /* Tooltip */
+  .tooltip{position:fixed;padding:8px 10px;border-radius:8px;background:#0b0b0b;color:#fff;font-size:13px;border:1px solid rgba(255,255,255,0.06);pointer-events:none;transform:translate(-50%,-120%);display:none;z-index:1000}
+
+  /* Bottom nav and FAB */
+  .bottom-wrap{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:420px;max-width:96%;display:flex;justify-content:center;pointer-events:none}
+  .bottom-nav{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));height:64px;border-radius:20px;display:flex;align-items:center;justify-content:space-around;padding:0 18px;box-shadow:0 14px 30px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.03);pointer-events:auto}
+  .nav-item{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--muted);gap:4px;cursor:pointer}
+  .nav-item.active{color:var(--muted-2)}
+  .fab{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);width:72px;height:72px;border-radius:50%;background:linear-gradient(180deg,var(--accent-purple),#7b2cff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;box-shadow:0 18px 40px rgba(199,77,255,0.18);border:6px solid rgba(255,255,255,0.03);cursor:pointer;z-index:80}
+
+  /* Modal backdrop & modal */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:12px}
+  .modal{width:100%;max-width:420px;background:linear-gradient(180deg,#20232A,#171719);border-radius:18px;padding:16px;border:1px solid rgba(255,255,255,0.04);box-shadow:var(--shadow)}
+  .modal h3{margin:0 0 8px 0;color:#fff}
+  .form-row{display:flex;gap:8px;margin-bottom:10px}
+  label{font-size:13px;color:var(--muted)}
+  input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted-2)}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+  .btn{background:var(--accent-purple);color:#fff;padding:8px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  .small{font-size:13px}
+
+  /* Transaction list item */
+  .tx-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .tx-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:12px;background:rgba(255,255,255,0.02)}
+  .tx-left{display:flex;gap:10px;align-items:center}
+  .tx-cat-badge{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+  .muted{color:var(--muted)}
+
+  /* tiny responsiveness */
+  @media (max-width:380px){
+    .legend{display:none}
+    canvas{width:140px;height:140px}
+  }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="HellpMoney dashboard">
+    <!-- Topbar -->
+    <div class="topbar" role="navigation" aria-label="Barra superior">
+      <div class="top-left">
+        <div class="avatar" aria-hidden="false"><img alt="Avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' fill='%2332433f'/><text x='50%' y='52%' fill='%23dfe7ef' font-family='Arial' font-size='28' text-anchor='middle' dominant-baseline='middle'>VM</text></svg>"></div>
+        <button id="monthBtn" class="month-btn" aria-haspopup="dialog" aria-controls="monthModal" aria-expanded="false">
+          <span id="monthLabel">Novembro</span>
+          <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="menuBtn" class="dot-menu" aria-haspopup="menu" aria-expanded="false" title="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="#fff"/><circle cx="12" cy="12" r="1.8" fill="#fff"/><circle cx="19" cy="12" r="1.8" fill="#fff"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Balance Card -->
+    <section class="card" aria-labelledby="saldoTitle">
+      <div class="row">
+        <div>
+          <p id="saldoTitle" class="title">Saldo em contas</p>
+          <div id="balance" class="balance" data-value="0">R$ 0,00</div>
+          <div class="small muted" id="updatedAt">Atualizado agora</div>
+        </div>
+        <div style="min-width:120px;display:flex;flex-direction:column;align-items:flex-end">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Visão mensal</div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <div id="incomeBtn" class="indicator ind-income" role="button" tabindex="0" aria-pressed="false" title="Ver receitas">
+              <div class="ind-icon">▲</div>
+              <div class="ind-text"><div class="label">Receitas</div><div id="incomeVal" class="val">R$ 0,00</div></div>
+            </div>
+            <div id="expenseBtn" class="indicator ind-expense" role="button" tabindex="0" aria-pressed="false" title="Ver despesas">
+              <div class="ind-icon">▼</div>
+              <div class="ind-text"><div class="label">Despesas</div><div id="expenseVal" class="val">R$ 0,00</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chart section -->
+    <section class="panel" aria-labelledby="chartTitle">
+      <h4 id="chartTitle">Despesas por categoria</h4>
+      <div class="chart-area">
+        <div class="donut-wrap" aria-hidden="false">
+          <canvas id="donut" width="160" height="160" role="img" aria-label="Gráfico de rosca das despesas"></canvas>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </section>
+
+    <!-- Empty / info area -->
+    <div id="infoArea" class="panel muted" style="text-align:center">
+      <div id="infoText">Toque no + para adicionar uma nova transação</div>
+    </div>
+
+    <!-- Pages placeholders (switched by nav) -->
+    <div id="pageMain" style="display:none"></div>
+    <div id="pageTransactions" style="display:none"></div>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+  </div>
+
+  <!-- Bottom nav & FAB -->
+  <div class="bottom-wrap" aria-hidden="false">
+    <div style="width:420px;max-width:96%;display:flex;justify-content:center;align-items:center;position:relative">
+      <div class="fab" id="fab" aria-label="Nova transação" title="Nova transação">+</div>
+      <nav class="bottom-nav" role="tablist" aria-label="Navegação inferior">
+        <div class="nav-item active" data-target="main"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 13h6v8H3zM15 3h6v18h-6zM9 7h6v14H9z" fill="#fff"/></svg><span>Principal</span></div>
+        <div class="nav-item" data-target="transactions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="#B0B0B0" stroke-width="1.6" stroke-linecap="round"/></svg><span>Transações</span></div>
+        <div style="width:64px"></div>
+        <div class="nav-item" data-target="reports"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3h18v7H3zM3 14h18v7H3z" fill="#B0B0B0"/></svg><span>Relatórios</span></div>
+        <div class="nav-item" data-target="more"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6a2 2 0 100-4 2 2 0 000 4zM20 8a2 2 0 100-4 2 2 0 000 4zM4 8a2 2 0 100-4 2 2 0 000 4z" fill="#B0B0B0"/></svg><span>Mais</span></div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Menus & Modals -->
+  <!-- Menu dropdown -->
+  <div id="menuDropdown" style="position:fixed;right:16px;top:74px;display:none;z-index:300">
+    <div class="modal" role="menu" aria-hidden="true" style="width:260px;padding:10px">
+      <button class="btn ghost small" data-action="filter" style="width:100%;margin-bottom:8px;text-align:left">Filtrar</button>
+      <button class="btn ghost small" data-action="export" style="width:100%;margin-bottom:8px;text-align:left">Exportar</button>
+      <button class="btn ghost small" data-action="settings" style="width:100%;text-align:left">Configurações</button>
+    </div>
+  </div>
+
+  <!-- Month modal -->
+  <div id="monthModal" class="backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="monthTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="monthTitle">Selecionar mês</h3>
+        <button id="closeMonth" class="btn ghost small">Fechar</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="flex:1"><label for="monthSelect">Mês</label><select id="monthSelect"></select></div>
+        <div style="width:100px"><label for="yearSelect">Ano</label><select id="yearSelect"></select></div>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <button id="applyMonth" class="btn">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction list modal (for incomes/expenses or category) -->
+  <div id="listModal" class="backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="listTitle">Transações</h3>
+        <button id="closeList" class="btn ghost small">Fechar</button>
+      </div>
+      <div id="listContent" style="margin-top:10px;max-height:360px;overflow:auto"></div>
+    </div>
+  </div>
+
+  <!-- New transaction modal -->
+  <div id="txModal" class="backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="txTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="txTitle">Nova transação</h3>
+        <button id="closeTx" class="btn ghost small">Fechar</button>
+      </div>
+      <form id="txForm">
+        <div class="form-row">
+          <div style="flex:1">
+            <label for="txType">Tipo</label>
+            <select id="txType" required>
+              <option value="income">Receita</option>
+              <option value="expense" selected>Despesa</option>
+            </select>
+          </div>
+          <div style="width:120px">
+            <label for="txDate">Data</label>
+            <input id="txDate" type="date" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1">
+            <label for="txValue">Valor</label>
+            <input id="txValue" type="text" inputmode="numeric" placeholder="R$ 0,00" required>
+          </div>
+          <div style="width:120px">
+            <label for="txAccount">Conta</label>
+            <select id="txAccount">
+              <option value="conta_corrente">Conta corrente</option>
+              <option value="cartao">Cartão</option>
+              <option value="poupanca">Poupança</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1">
+            <label for="txCategory">Categoria</label>
+            <select id="txCategory" required>
+              <option>Educação</option>
+              <option>Casa</option>
+              <option>Alimentação</option>
+              <option>Outros</option>
+              <option>Salário</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="txNote">Observação (opcional)</label>
+          <textarea id="txNote" placeholder="Detalhes..."></textarea>
+        </div>
+        <div class="actions" style="margin-top:12px">
+          <button type="button" id="cancelTxBtn" class="btn ghost">Cancelar</button>
+          <button type="submit" class="btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+/* ===== Data & state ===== */
+const LS_KEY = 'hellpmoney_tx_v1';
+const now = new Date();
+let state = {
+  month: now.getMonth(),
+  year: now.getFullYear(),
+  transactions: loadTxs(),
+};
+
+function sampleInitial(){
+  // Seed if none
+  if(!state.transactions || state.transactions.length===0){
+    state.transactions = [
+      {id:1,type:'income',value:3000,date:`${state.year}-${String(state.month+1).padStart(2,'0')}-05`,category:'Salário',account:'conta_corrente',note:'Salário mensal'},
+      {id:2,type:'expense',value:650,date:`${state.year}-${String(state.month+1).padStart(2,'0')}-07`,category:'Educação',account:'conta_corrente',note:'Curso'},
+      {id:3,type:'expense',value:276,date:`${state.year}-${String(state.month+1).padStart(2,'0')}-10`,category:'Casa',account:'cartao',note:'Conta'},
+      {id:4,type:'expense',value:220,date:`${state.year}-${String(state.month+1).padStart(2,'0')}-12`,category:'Alimentação',account:'conta_corrente',note:'Super'},
+      {id:5,type:'expense',value:290,date:`${state.year}-${String(state.month+1).padStart(2,'0')}-15`,category:'Outros',account:'poupanca',note:'Vários'}
+    ];
+    saveTxs();
+  }
+}
+sampleInitial();
+
+function loadTxs(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return [] }
+}
+function saveTxs(){ localStorage.setItem(LS_KEY, JSON.stringify(state.transactions)); }
+
+/* ===== Helpers ===== */
+const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v || 0);
+const q = sel => document.querySelector(sel);
+const qs = sel => Array.from(document.querySelectorAll(sel));
+const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+/* ===== Elements ===== */
+const monthBtn = q('#monthBtn');
+const monthLabel = q('#monthLabel');
+const monthModal = q('#monthModal');
+const monthSelect = q('#monthSelect');
+const yearSelect = q('#yearSelect');
+const applyMonth = q('#applyMonth');
+const closeMonth = q('#closeMonth');
+
+const menuBtn = q('#menuBtn');
+const menuDropdown = q('#menuDropdown');
+
+const incomeBtn = q('#incomeBtn');
+const expenseBtn = q('#expenseBtn');
+const incomeVal = q('#incomeVal');
+const expenseVal = q('#expenseVal');
+const balanceEl = q('#balance');
+
+const donut = q('#donut');
+const ctx = donut.getContext('2d');
+const legend = q('#legend');
+const tooltip = q('#tooltip');
+
+const fab = q('#fab');
+const txModal = q('#txModal');
+const txForm = q('#txForm');
+const txType = q('#txType');
+const txDate = q('#txDate');
+const txValue = q('#txValue');
+const txCategory = q('#txCategory');
+const txAccount = q('#txAccount');
+const txNote = q('#txNote');
+const closeTx = q('#closeTx');
+const cancelTxBtn = q('#cancelTxBtn');
+
+const listModal = q('#listModal');
+const listTitle = q('#listTitle');
+const listContent = q('#listContent');
+const closeList = q('#closeList');
+
+const navItems = qs('.nav-item');
+
+/* ===== Category colors (as requested: roxo, rosa, amarelo, laranja) ===== */
+const CAT_COLORS = {
+  'Educação':'#7C4DFF', // roxo
+  'Casa':'#FF6EA1',     // rosa
+  'Alimentação':'#FFD166',// amarelo
+  'Outros':'#FF8A65',    // laranja
+  'Salário':'#43E97B'    // verde (income)
+};
+
+/* ===== Drawing donut (canvas) ===== */
+let segments = []; // {start,end,label,value,color,percent}
+function drawDonut(){
+  const w = donut.width = donut.clientWidth * devicePixelRatio;
+  const h = donut.height = donut.clientHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.clearRect(0,0,donut.clientWidth,donut.clientHeight);
+
+  const cx = donut.clientWidth/2;
+  const cy = donut.clientHeight/2;
+  const radius = Math.min(cx,cy) - 6;
+  const inner = radius * 0.58;
+
+  // Aggregate expenses for current month/year
+  const txs = state.transactions.filter(t=>{
+    const d = new Date(t.date);
+    return d.getMonth() === state.month && d.getFullYear() === state.year && t.type === 'expense';
+  });
+  const map = {};
+  txs.forEach(t => map[t.category] = (map[t.category]||0) + t.value);
+  // Ensure requested categories appear (Educação, Casa, Alimentação, Outros)
+  const desired = ['Educação','Casa','Alimentação','Outros'];
+  let data = desired.filter(c=>map[c]).map(c=>({label:c,value:map[c],color:CAT_COLORS[c]}));
+  // If some missing but other expense categories exist, include them
+  const others = Object.keys(map).filter(k=>!desired.includes(k)).map(k=>({label:k,value:map[k],color:CAT_COLORS[k]||'#999'}));
+  data = data.concat(others);
+  // If no expenses, show sample small grey circle
+  if(data.length === 0){
+    // draw a subtle ring to indicate empty
+    ctx.beginPath();
+    ctx.arc(cx,cy,radius,0,Math.PI*2);
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx,cy,inner,0,Math.PI*2);
+    ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#121212';
+    ctx.fill();
+    // center label
+    ctx.fillStyle = '#FFF';
+    ctx.font = '600 14px Inter, Arial';
+    ctx.textAlign = 'center'; ctx.fillText('Sem despesas', cx, cy - 6);
+    ctx.font = '700 16px Inter, Arial';
+    ctx.fillText(fmt(0), cx, cy + 18);
+    segments = [];
+    renderLegend([]);
+    return;
+  }
+
+  const total = data.reduce((s,i)=>s+i.value,0);
+  let angle = -Math.PI/2;
+  segments = [];
+  data.forEach(item=>{
+    const slice = (item.value/total) * Math.PI * 2;
+    const start = angle;
+    const end = angle + slice;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    // cut inner
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,inner,start,end);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    segments.push({start,end,label:item.label,value:item.value,color:item.color,percent: item.value/total*100});
+    angle = end;
+  });
+
+  // inner circle cover
+  ctx.beginPath();
+  ctx.arc(cx,cy,inner,0,Math.PI*2);
+  ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#121212';
+  ctx.fill();
+
+  // center text
+  ctx.fillStyle = '#FFF';
+  ctx.font = '600 13px Inter, Arial';
+  ctx.textAlign = 'center'; ctx.fillText('Despesas', cx, cy - 6);
+  ctx.font = '700 16px Inter, Arial';
+  ctx.fillText(fmt(total), cx, cy + 18);
+
+  renderLegend(data);
+}
+
+/* ===== Legend ===== */
+function renderLegend(data){
+  legend.innerHTML = '';
+  data.forEach(d=>{
+    const item = document.createElement('div'); item.className = 'legend-item';
+    item.innerHTML = `<span class="swatch" style="background:${d.color}"></span>
+                      <div class="legend-text"><div class="name">${d.label}</div><div class="val">${fmt(d.value)}</div></div>`;
+    item.onclick = ()=> openListByCategory(d.label);
+    legend.appendChild(item);
+  });
+}
+
+/* ===== UI totals ===== */
+function computeTotals(){
+  const txs = state.transactions.filter(t=>{
+    const d = new Date(t.date);
+    return d.getMonth() === state.month && d.getFullYear() === state.year;
+  });
+  const incomes = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.value,0);
+  const expenses = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.value,0);
+  return {incomes,expenses,balance:incomes - expenses,txs};
+}
+function refreshTotals(animate=true){
+  const totals = computeTotals();
+  incomeVal.textContent = fmt(totals.incomes);
+  expenseVal.textContent = fmt(totals.expenses);
+  // animate balance
+  animateNumber(balanceEl, parseFloat(balanceEl.dataset.value||0), totals.balance, 420);
+  balanceEl.dataset.value = totals.balance;
+}
+
+/* ===== animate number ===== */
+function animateNumber(el, from, to, duration=400){
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1,(now-start)/duration);
+    const eased = (--t)*t*t+1;
+    const val = from + (to-from) * eased;
+    el.textContent = fmt(val);
+    if(now - start < duration) requestAnimationFrame(step);
+    else el.textContent = fmt(to);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ===== Donut hover + click ===== */
+donut.addEventListener('mousemove', (e)=>{
+  if(segments.length===0){ tooltip.style.display='none'; tooltip.setAttribute('aria-hidden','true'); return; }
+  const rect = donut.getBoundingClientRect();
+  const x = (e.clientX - rect.left);
+  const y = (e.clientY - rect.top);
+  const cx = rect.width/2;
+  const cy = rect.height/2;
+  const dx = x - cx, dy = y - cy;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const angle = Math.atan2(dy,dx);
+  const inner = Math.min(rect.width,rect.height)/2 * 0.58;
+  const outer = Math.min(rect.width,rect.height)/2 - 6;
+  if(dist < inner || dist > outer){ tooltip.style.display='none'; tooltip.setAttribute('aria-hidden','true'); return; }
+  // normalize angle range
+  let a = angle;
+  if(a < -Math.PI/2) a += Math.PI*2;
+  for(const s of segments){
+    let sStart = s.start, sEnd = s.end;
+    if(sStart < -Math.PI/2){ sStart += Math.PI*2; sEnd += Math.PI*2; }
+    if(a >= sStart && a <= sEnd){
+      tooltip.style.display = 'block';
+      tooltip.setAttribute('aria-hidden','false');
+      tooltip.innerHTML = `<strong style="display:block">${s.label}</strong>${fmt(s.value)} • ${s.percent.toFixed(1)}%`;
+      tooltip.style.left = (e.clientX) + 'px';
+      tooltip.style.top = (e.clientY - 12) + 'px';
+      return;
+    }
+  }
+});
+donut.addEventListener('mouseleave', ()=>{ tooltip.style.display='none'; tooltip.setAttribute('aria-hidden','true'); });
+donut.addEventListener('click', (e)=>{
+  if(segments.length===0) return;
+  const rect = donut.getBoundingClientRect();
+  const x = (e.clientX - rect.left);
+  const y = (e.clientY - rect.top);
+  const cx = rect.width/2;
+  const cy = rect.height/2;
+  const dx = x - cx, dy = y - cy;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const inner = Math.min(rect.width,rect.height)/2 * 0.58;
+  const outer = Math.min(rect.width,rect.height)/2 - 6;
+  if(dist < inner || dist > outer) return;
+  const angle = Math.atan2(dy,dx);
+  let a = angle; if(a < -Math.PI/2) a += Math.PI*2;
+  for(const s of segments){
+    let sStart = s.start, sEnd = s.end;
+    if(sStart < -Math.PI/2){ sStart += Math.PI*2; sEnd += Math.PI*2; }
+    if(a >= sStart && a <= sEnd){
+      openListByCategory(s.label);
+      return;
+    }
+  }
+});
+
+/* ===== Open/close menus & modals ===== */
+menuBtn.addEventListener('click', (e)=>{
+  const shown = menuDropdown.style.display === 'block';
+  menuDropdown.style.display = shown ? 'none' : 'block';
+  menuBtn.setAttribute('aria-expanded', String(!shown));
+});
+document.addEventListener('click', (e)=>{ if(!menuDropdown.contains(e.target) && e.target!==menuBtn) menuDropdown.style.display='none'; });
+
+monthBtn.addEventListener('click', ()=>{ openMonthModal(); });
+closeMonth.addEventListener('click', ()=> closeModal(monthModal));
+applyMonth.addEventListener('click', ()=>{
+  const m = parseInt(monthSelect.value,10);
+  const y = parseInt(yearSelect.value,10);
+  state.month = m; state.year = y;
+  monthLabel.textContent = monthSelect.options[monthSelect.selectedIndex].text;
+  closeModal(monthModal);
+  saveTxs();
+  refreshAll();
+});
+
+function openMonthModal(){ populateMonthYear(); monthModal.style.display='flex'; monthModal.setAttribute('aria-hidden','false'); monthBtn.setAttribute('aria-expanded','true'); }
+function closeModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); monthBtn.setAttribute('aria-expanded','false'); }
+
+function openListModal(title,items){
+  listTitle.textContent = title;
+  listContent.innerHTML = '';
+  if(items.length===0) listContent.innerHTML = '<div class="muted">Nenhuma transação encontrada</div>';
+  else{
+    items.forEach(t=>{
+      const d = document.createElement('div'); d.className='tx-item';
+      const badge = document.createElement('div'); badge.className='tx-cat-badge'; badge.style.background = t.type === 'income' ? 'linear-gradient(180deg,#48e37e,#23b35a)' : CAT_COLORS[t.category] || '#666';
+      badge.textContent = t.category[0] || '•';
+      const left = document.createElement('div'); left.className='tx-left'; left.appendChild(badge);
+      const meta = document.createElement('div'); meta.style.display='flex'; meta.style.flexDirection='column'; meta.style.marginLeft='8px';
+      meta.innerHTML = `<strong>${t.category}</strong><span class="muted small">${t.date} • ${t.account}</span>`;
+      left.appendChild(meta);
+      const right = document.createElement('div'); right.style.textAlign='right';
+      right.innerHTML = `<div style="font-weight:700;color:${t.type==='income'?'#43E97B':'#FF8A8A'}">${fmt(t.value)}</div><div class="muted small">${t.type}</div>`;
+      d.appendChild(left); d.appendChild(right);
+      listContent.appendChild(d);
+    });
+  }
+  listModal.style.display = 'flex'; listModal.setAttribute('aria-hidden','false');
+}
+closeList.addEventListener('click', ()=>{ listModal.style.display='none'; listModal.setAttribute('aria-hidden','true'); });
+
+function openListByCategory(cat){
+  const items = state.transactions.filter(t=>{
+    const d = new Date(t.date);
+    return d.getMonth() === state.month && d.getFullYear() === state.year && t.category === cat;
+  });
+  openListModal(`Despesas — ${cat}`, items);
+}
+
+/* Income/expense indicator click shows filtered list */
+incomeBtn.addEventListener('click', ()=>{ const items = state.transactions.filter(t=>t.type==='income' && new Date(t.date).getMonth()===state.month && new Date(t.date).getFullYear()===state.year); openListModal('Receitas', items); });
+expenseBtn.addEventListener('click', ()=>{ const items = state.transactions.filter(t=>t.type==='expense' && new Date(t.date).getMonth()===state.month && new Date(t.date).getFullYear()===state.year); openListModal('Despesas', items); });
+
+/* FAB opens new transaction modal */
+fab.addEventListener('click', ()=>{ openTxModal(); });
+function openTxModal(){
+  txForm.reset();
+  // default date = today or selected month first day
+  const d = new Date(state.year, state.month, Math.min( new Date().getDate(), 28 ));
+  txDate.value = d.toISOString().slice(0,10);
+  txModal.style.display = 'flex'; txModal.setAttribute('aria-hidden','false');
+}
+closeTx.addEventListener('click', ()=>{ txModal.style.display='none'; txModal.setAttribute('aria-hidden','true'); });
+cancelTxBtn.addEventListener('click', ()=>{ txModal.style.display='none'; txModal.setAttribute('aria-hidden','true'); });
+
+/* Submit new transaction */
+txForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const type = txType.value;
+  const date = txDate.value;
+  const raw = txValue.dataset.raw;
+  const value = raw ? parseFloat(raw) : 0;
+  const category = txCategory.value;
+  const account = txAccount.value;
+  const note = txNote.value;
+
+  if(!date || !(value>0)){
+    alert('Preencha uma data e valor maior que 0.');
+    return;
+  }
+  const id = Date.now();
+  const tx = {id,type,value,date,category,account,note};
+  state.transactions.push(tx);
+  saveTxs();
+  txModal.style.display='none'; txModal.setAttribute('aria-hidden','true');
+  refreshAll();
+});
+
+/* Currency input masking (pt-BR) - stores raw cents in dataset.raw */
+txValue.addEventListener('input', (e)=>{
+  const v = e.target.value.replace(/\D/g,'');
+  const cents = v ? parseInt(v,10) : 0;
+  const number = cents/100;
+  e.target.dataset.raw = number;
+  e.target.value = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(number);
+});
+txValue.addEventListener('blur', (e)=>{ if(!e.target.value) e.target.value = ''; });
+
+/* ===== Month selector population ===== */
+function populateMonthYear(){
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  monthSelect.innerHTML = months.map((m,i)=>`<option value="${i}" ${i===state.month?'selected':''}>${m}</option>`).join('');
+  const years = [];
+  for(let y = now.getFullYear()-2; y<= now.getFullYear()+1; y++) years.push(y);
+  yearSelect.innerHTML = years.map(y=>`<option value="${y}" ${y===state.year?'selected':''}>${y}</option>`).join('');
+}
+
+/* ===== Nav handling (simple show/hide pages) ===== */
+navItems.forEach(item=>{
+  item.addEventListener('click', ()=>{
+    navItems.forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    const t = item.dataset.target;
+    // in this single-file demo we'll show simple alerts or toggle placeholders
+    if(t === 'main'){ /* keep main visible */ }
+    if(t === 'transactions'){ alert('Ir para Transações (placeholder)'); }
+    if(t === 'reports'){ alert('Ir para Relatórios (placeholder)'); }
+    if(t === 'more'){ alert('Ir para Mais (placeholder)'); }
+  });
+});
+
+/* ===== Render legend click handlers created by renderLegend ===== */
+
+/* ===== Init & refresh ===== */
+function refreshAll(){
+  refreshTotals();
+  drawDonut();
+  monthLabel.textContent = new Date(state.year, state.month,1).toLocaleString('pt-BR',{month:'long'});
+  // update income/expense badges (colors already handled)
+  // update info area text
+  const totals = computeTotals();
+  q('#infoText').textContent = totals.txs.length ? '' : 'Toque no + para adicionar uma nova transação';
+}
+refreshAll();
+
+/* ===== Initial draw after ensuring canvas size ===== */
+window.addEventListener('resize', ()=> drawDonut());
+setTimeout(()=> drawDonut(), 120);
+
+/* ===== List modal close when clicking outside ===== */
+listModal.addEventListener('click', (e)=>{ if(e.target === listModal) { listModal.style.display='none'; listModal.setAttribute('aria-hidden','true'); } });
+txModal.addEventListener('click', (e)=>{ if(e.target === txModal) { txModal.style.display='none'; txModal.setAttribute('aria-hidden','true'); } });
+monthModal.addEventListener('click', (e)=>{ if(e.target === monthModal) { monthModal.style.display='none'; monthModal.setAttribute('aria-hidden','true'); } });
+
+/* ===== Utility: open/close generic modal by element ===== */
+function openModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
+function closeModalEl(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
+
+/* ===== Open transaction lists via other UI elements (income/expense already set) ===== */
+
+/* ===== Expose clearing for demo/testing (not required) ===== */
+window._hellpmoney = {state, refreshAll, saveTxs, loadTxs};
+
+/* ===== Accessibility niceties ===== */
+/* trap focus not implemented (lightweight demo) */
+
+</script>
+</body>
+</html>
+```<!
